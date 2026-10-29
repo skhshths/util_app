@@ -1,6 +1,6 @@
 # Utilities
 
-A calm, minimal set of six everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
+A calm, minimal set of seven everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
 
 | # | Tool | What it does |
 | --- | --- | --- |
@@ -10,6 +10,7 @@ A calm, minimal set of six everyday tools in one static web app. A sleek home pa
 | 4 | **Encoder toolbox** | Base64, URL encoding with a URL breakdown, JWT decoding with HMAC verification, MD5/SHA hashing of text or files, Unix timestamps and HTML entities. |
 | 5 | **Habit grid** | A GitHub-style year grid for each habit, with streaks, 30-day completion and per-weekday schedules. |
 | 6 | **Workout logger** | Logs sets × reps × weight, can repeat a previous session, and charts your progress (estimated 1RM, top set, volume, reps) and personal records. |
+| 7 | **SQL viewer** | Opens SQL dumps (MySQL, MariaDB, PostgreSQL, SQLite) and SQLite database files of any size, multi-gigabyte included. Huge tables are shown a page at a time, and a full-file search finds specific rows. |
 
 The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): Inter, warm neutrals, soft cards, oklch accent colours, light and dark themes, and small spring animations.
 
@@ -26,6 +27,7 @@ The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): I
   - [Encoder toolbox](#4-encoder-toolbox)
   - [Habit grid](#5-habit-grid)
   - [Workout logger](#6-workout-logger)
+  - [SQL viewer](#7-sql-viewer)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data, backups and privacy](#data-backups-and-privacy)
 - [Hosting it](#hosting-it)
@@ -65,12 +67,12 @@ Each tool has a **Sample** or **Try examples** button, so you can see it working
 ## The home page
 
 - Each tool is a card with an icon, a short description and a live status line. Examples: “Draft saved · 2.1 KB”, “2/4 done today” (with a 14-day mini grid) or “Last: Yesterday · 3 in 7 days”.
-- Press **1–6** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
+- Press **1–7** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
 - The **☾/☀** button switches light and dark mode. Your choice is remembered; until you pick one, the app follows your system setting.
 - The **⋯** menu has **Export backup**, **Import backup**, **Keyboard shortcuts** and **Erase all data**.
 - Inside a tool, the breadcrumb at the top shows where you are. Click **Utilities** or press **Esc** to go back.
 
-URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`), so you can bookmark a tool directly.
+URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`), so you can bookmark a tool directly.
 
 ---
 
@@ -205,6 +207,66 @@ How the numbers work:
 - **kg / lb:** weights are stored in kilograms and shown in your chosen unit, so switching back and forth never loses precision.
 - **Try example data** loads 9 weeks of a push/pull/legs programme with gradual progression and a deload week.
 
+### 7. SQL viewer
+
+Open a `.sql` dump or a SQLite database file (`.db`, `.sqlite`, `.sqlite3`) with **Open file**, drag it onto the page, or use **Paste SQL** for a snippet. **Generate a 105,000-row sample** creates a realistic MySQL dump with products, customers and orders so you can try it straight away.
+
+**What it reads**
+
+| Source | Details |
+| --- | --- |
+| MySQL / MariaDB | `mysqldump` output. Handles extended multi-row `INSERT`s, backslash escapes, `_utf8mb4'…'` introducers, `/*!40101 … */` conditional comments, `#` comments, `LOCK TABLES` and `REPLACE INTO`. |
+| PostgreSQL | `pg_dump` plain format. Reads `COPY … FROM stdin` blocks (tab-separated, `\N` for NULL, backslash escapes) and `--inserts` / `--column-inserts` output, including `E'…'` strings and `'…'::type` casts. |
+| SQLite text | `sqlite3 db .dump` output (`INSERT INTO "t" VALUES(…)`, `''` escaping). |
+| SQLite database | The binary `.db` file itself. It's read directly from the SQLite page format: rowid and `WITHOUT ROWID` tables, `INTEGER PRIMARY KEY` aliases, overflow pages, UTF‑8/UTF‑16, integers up to 64-bit, floats and BLOBs. |
+| Anything else | Generic `CREATE TABLE` + `INSERT` SQL. If there's no `CREATE TABLE`, columns are named from the `INSERT` column list or as `column1, column2…`. |
+
+**How huge files are handled**
+
+- **Streaming:** the file is never loaded into memory whole. A background Web Worker reads it in 4 MB slices.
+- **Indexing (dumps):** a single pass understands quoting, escapes, comments and `COPY` blocks. For every table it records:
+  - the exact row count
+  - the columns and `CREATE` statement
+  - the first 100 rows
+  - a compact index of byte offsets, with one entry per run of up to 2,000 rows
+
+  A progress bar shows the percentage, speed, time left and tables found, and you can cancel.
+- **Indexing (SQLite files):** the schema loads instantly. Row counts are filled in in the background by walking each table's b-tree, and the first page shows as soon as it's reachable.
+- **Paging:** any page of any table is fetched by reading only the run that holds it, so jumping to row 23,999,950 takes milliseconds.
+- **Measured** with headless Chromium in this repo's test setup:
+
+| Input | Result |
+| --- | --- |
+| 3.0 GB MySQL dump, 24 million rows | indexed in about 16 s; deep page in about 60 ms; full-file search in about 19 s; browser memory grew about 300 MB |
+| 185 MB MySQL dump, 3 million rows | indexed in about 2 s |
+| 60 MB SQLite database, 1 million rows | opened and counted in under a second |
+
+**Browsing**
+- The left sidebar shows the file type, size, table count, total rows and statement count. **Other objects** opens the views, indexes, triggers and sequences found in the file. You can filter the table list by name.
+- The grid has a sticky header with each column's name and type, row numbers, right-aligned numbers, italic `NULL`, `BLOB · size` and `↵` for line breaks.
+- **Large tables are shortened:** the pager shows *Rows 1–100 of 24,000,000* with first, previous, next and last buttons, **Go to row**, and 50/100/250/500 rows per page. Press **J** / **K** (or **→** / **←**) to page.
+- **Click any cell** to see its full value in a dialog. JSON values are pretty-printed, and there's a copy button. Values over 100,000 characters are truncated for display.
+- **Schema** shows a column table (name, type, constraints) and the original `CREATE` statement.
+- An open file stays open while you visit other tools. **Close** releases it.
+
+**Searching**
+- Type in the search bar and press **Enter**, or **/** to focus it. Options:
+  - **Where:** all tables, or only the current table
+  - **Column:** any column, or one specific column (current table only)
+  - **Mode:** **Contains**, **Exact** (whole value) or **Regex**
+  - **Aa:** match case
+- Results stream in while the scan runs, with a progress bar and a **Stop** button. They're grouped by table, with the matching cell highlighted.
+- Click a result's row number to **jump to that row** in the table: it opens the right page and highlights the row. Click a cell to see its full value.
+- **Speed:** before parsing, each `INSERT` (or `COPY` line) is checked for the query text. Most statements are skipped without being parsed, so Contains and Exact searches run at close to disk speed. Searching one table only reads that table's byte ranges.
+- **Limit:** results stop at 1,000 matches. The header tells you when there are more; narrow the search to one table or column.
+
+**Limits**
+- Compressed files (`.gz`, `.zip`) need unzipping first. The viewer detects them and tells you.
+- Files must be UTF‑8; UTF‑16 dumps are detected and rejected with a message.
+- For SQLite, changes still in a `-wal` file aren't visible. Run `PRAGMA wal_checkpoint;` or close the database cleanly first. Encrypted databases (SQLCipher) can't be read.
+- Views are listed with their SQL but not evaluated; this is a viewer, not a query engine.
+- Exotic syntax inside an `INSERT`, such as `ON DUPLICATE KEY UPDATE … VALUES(x)`, can make that statement's row count off by one.
+
 ---
 
 ## Keyboard shortcuts
@@ -215,12 +277,14 @@ How the numbers work:
 | Anywhere | `T` | Toggle dark mode |
 | Anywhere | `Esc` | Leave a text field, close a dialog, or go back home |
 | Dialogs | `Ctrl/⌘ + Enter` | Confirm (save) |
-| Home | `1`–`6` | Open a tool |
+| Home | `1`–`7` | Open a tool |
 | Home | `/` | Search tools, then `Enter` to open the first match |
 | JSON | `Ctrl/⌘ + Shift + F` | Format input as pretty JSON |
 | Habits | `N` | New habit |
 | Habits | `1`–`9` | Tick habit 1–9 for today |
 | Workouts | `N` | Log a workout |
+| SQL viewer | `/` | Focus the search box |
+| SQL viewer | `J` / `K` (or `→` / `←`) | Next / previous page |
 
 Shortcuts are ignored while you're typing in a field.
 
@@ -228,7 +292,7 @@ Shortcuts are ignored while you're typing in a field.
 
 ## Data, backups and privacy
 
-- **Nothing is sent anywhere.** The app makes no network requests apart from loading the Inter font from Google Fonts, and it works fine without it. Files you open or hash are read in the browser and never uploaded.
+- **Nothing is sent anywhere.** The app makes no network requests apart from loading the Inter font from Google Fonts, and it works fine without it. Files you open, hash or view in the SQL viewer are read in the browser and never uploaded.
 - Data lives in `localStorage` under keys that start with `util-app/`:
 
 | Key | Contents |
@@ -237,6 +301,7 @@ Shortcuts are ignored while you're typing in a field.
 | `util-app/habits` | habits and their done days |
 | `util-app/workouts` | sessions and the weight unit |
 | `util-app/workouts-view` | selected exercise and chart metric |
+| `util-app/sql`, `util-app/sql-last` | SQL viewer page size and search options; the name and size of the last file opened (never its contents) |
 | `util-app/json`, `regex`, `diff`, `encode` | your last inputs, so a refresh doesn't lose work. JSON and diff drafts over about 400 KB aren't saved. |
 
 - JWT secrets are **never** stored.
@@ -282,7 +347,8 @@ util_app/
 │       ├── diff.js       Diff viewer (Myers diff, word diff, patch export)
 │       ├── encode.js     Encoder toolbox (6 tabs)
 │       ├── habits.js     Habit grid
-│       └── workouts.js   Workout logger (+ SVG chart)
+│       ├── workouts.js   Workout logger (+ SVG chart)
+│       └── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
 ├── .nojekyll
 └── README.md
 ```
@@ -294,11 +360,12 @@ There are no dependencies and no build step. The scripts are plain classic scrip
 ## How it works
 
 - **Router.** `#/<tool-id>` selects a tool. When you switch tools, the router calls the previous tool's cleanup function, which removes intervals, workers, observers and key listeners. It then mounts the new tool into `#view` and sets the `--h` accent hue for that page.
-- **Tools** register themselves with `U.register({...})`. The order of the `<script>` tags in `index.html` sets the order on the home page and the `1`–`6` shortcuts.
+- **Tools** register themselves with `U.register({...})`. The order of the `<script>` tags in `index.html` sets the order on the home page and the `1`–`7` shortcuts.
 - **Theme.** A tiny inline script picks the theme before first paint, so there's no flash. Colours are CSS custom properties on `:root` and `:root[data-theme="dark"]`. Accents are `oklch(L C hue)`, with lightness and chroma tuned for each theme, so every hue looks balanced in both.
 - **Lenient JSON parser.** A hand-written recursive-descent parser. In strict mode it raises an error at the first non-standard construct, with an exact line and column. In loose mode it records each repair category instead, which gives Repair its summary.
 - **Regex worker.** Built from a Blob URL. Each run gets an id, and stale results are dropped. If a job doesn't answer within 1.5 s, the worker is terminated and recreated.
 - **Diff.** Line-level Myers diff on normalised keys, which is how the whitespace and case options work. Paired deleted and added lines get a second, token-level Myers diff for the word highlights.
+- **SQL viewer worker.** A byte-level state machine walks the dump in 4 MB slices. It tracks quotes, backslash escapes (MySQL only), comments, parenthesis depth and `COPY` data, and reports every statement's exact byte range. Strings are skipped with native `indexOf`, so indexing runs at roughly 150–200 MB/s. Rows are counted from top-level `(` groups without parsing values, and only the preview and requested pages are fully parsed. For SQLite files, pages are read with `File.slice` through a 64 MB LRU page cache. Tables are walked in order, and a leaf-page index with cumulative counts makes any row reachable with a binary search.
 - **Charts** are hand-built SVG with “nice” axis ticks, a pointer-tracking tooltip and a ResizeObserver that redraws the chart when its width changes.
 
 ---
@@ -382,4 +449,7 @@ Current Chrome, Edge, Firefox and Safari, on desktop and mobile. The app uses CS
 | “Stopped after 1.5 s” in the regex tool | The pattern backtracks catastrophically on your text. Avoid nested quantifiers such as `(a+)+` or `(\w*)*`. Use more specific character classes or anchors instead. |
 | YAML that works elsewhere fails here | The parser covers the common subset described above. Complex keys (`? `), tags and multi-document streams beyond the first aren't supported. |
 | A CSV column such as `007` stayed as a string | That's deliberate: values with leading zeros keep their exact text, so zip codes and IDs survive. |
+| SQL viewer says the file is gzip/ZIP/UTF-16 | Decompress it (`gunzip dump.sql.gz`) or re-save it as UTF‑8, then open it again. |
+| SQLite rows look out of date | Recent changes may still be in the `-wal` file next to the database. Checkpoint it (`sqlite3 app.db "PRAGMA wal_checkpoint;"`) and reopen. |
+| A table shows `column1, column2…` | The dump has `INSERT`s but no `CREATE TABLE` for that table, so column names were unavailable. |
 | The page looks unstyled | Make sure the `css/` and `js/` folders sit next to `index.html`. |

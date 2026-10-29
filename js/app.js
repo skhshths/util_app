@@ -157,7 +157,8 @@
     chevronDown: '<path d="m6 9 6 6 6-6"/>',
     chart: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
     columns: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
-    rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/>'
+    rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/>',
+    database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>'
   };
   U.icon = function (name, cls) {
     return '<svg class="i' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>';
