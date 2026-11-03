@@ -1,6 +1,6 @@
 # Utilities
 
-A calm, minimal set of seven everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
+A calm, minimal set of eight everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
 
 | # | Tool | What it does |
 | --- | --- | --- |
@@ -11,6 +11,7 @@ A calm, minimal set of seven everyday tools in one static web app. A sleek home 
 | 5 | **Habit grid** | A GitHub-style year grid for each habit, with streaks, 30-day completion and per-weekday schedules. |
 | 6 | **Workout logger** | Logs sets × reps × weight, can repeat a previous session, and charts your progress (estimated 1RM, top set, volume, reps) and personal records. |
 | 7 | **SQL viewer** | Opens SQL dumps (MySQL, MariaDB, PostgreSQL, SQLite) and SQLite database files of any size, multi-gigabyte included. Huge tables are shown a page at a time, and a full-file search finds specific rows. |
+| 8 | **STL viewer** | Opens 3D models (binary or ASCII STL) in an interactive WebGL view you can rotate, pan and zoom. Shows the model's size, volume, surface area, whether it is watertight, and an estimated print weight. |
 
 The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): Inter, warm neutrals, soft cards, oklch accent colours, light and dark themes, and small spring animations.
 
@@ -28,6 +29,7 @@ The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): I
   - [Habit grid](#5-habit-grid)
   - [Workout logger](#6-workout-logger)
   - [SQL viewer](#7-sql-viewer)
+  - [STL viewer](#8-stl-viewer)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data, backups and privacy](#data-backups-and-privacy)
 - [Hosting it](#hosting-it)
@@ -67,12 +69,12 @@ Each tool has a **Sample** or **Try examples** button, so you can see it working
 ## The home page
 
 - Each tool is a card with an icon, a short description and a live status line. Examples: “Draft saved · 2.1 KB”, “2/4 done today” (with a 14-day mini grid) or “Last: Yesterday · 3 in 7 days”.
-- Press **1–7** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
+- Press **1–8** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
 - The **☾/☀** button switches light and dark mode. Your choice is remembered; until you pick one, the app follows your system setting.
 - The **⋯** menu has **Export backup**, **Import backup**, **Keyboard shortcuts** and **Erase all data**.
 - Inside a tool, the breadcrumb at the top shows where you are. Click **Utilities** or press **Esc** to go back.
 
-URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`), so you can bookmark a tool directly.
+URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`), so you can bookmark a tool directly.
 
 ---
 
@@ -267,6 +269,45 @@ Open a `.sql` dump or a SQLite database file (`.db`, `.sqlite`, `.sqlite3`) with
 - Views are listed with their SQL but not evaluated; this is a viewer, not a query engine.
 - Exotic syntax inside an `INSERT`, such as `ON DUPLICATE KEY UPDATE … VALUES(x)`, can make that statement's row count off by one.
 
+### 8. STL viewer
+
+Open an `.stl` file with **Open .stl**, drag it onto the viewer, or click **Sample** for a trefoil knot on a hexagonal plinth.
+
+**Moving around**
+
+| Action | Mouse / trackpad | Touch |
+| --- | --- | --- |
+| Rotate | Drag | Drag with one finger |
+| Pan | Right-drag, Shift-drag or Ctrl-drag | Drag with two fingers |
+| Zoom | Scroll | Pinch |
+| Reset | Double-click, **R**, or the ↺ button | ↺ button |
+
+**Display**
+- **View presets:** **3D** (isometric), **Front**, **Side** and **Top**, with a smooth camera move.
+- **Solid, Edges or Wire:** a shaded model, shaded with the triangle edges drawn on top, or wireframe only.
+- **Smooth:** averages normals across gently curved surfaces but keeps edges sharper than 35° crisp.
+- **Grid:** a floor grid under the model, sized to it, with red, green and blue X, Y and Z axes.
+- **Auto-rotate** spins the model slowly. **Orthographic** removes perspective, which helps check that parts line up.
+- **Colors:** 8 model colors.
+- **Screenshot** saves the current view as a PNG with a transparent background.
+- **Lighting:** fixed to the camera (a key light, a fill light and a rim light) so the model always looks lit. Back faces are lit too, so meshes with flipped triangles still look right.
+- **Up axis:** Z is up, matching CAD tools and slicers.
+
+**Model info** (right-hand panel)
+- **Size:** X × Y × Z bounding-box dimensions in mm, cm or inches. STL files have no units; most are in millimetres.
+- **Volume and surface area:** volume is computed from the signed volumes of the triangles. It's exact for closed meshes and marked *approx.* otherwise.
+- **Counts:** triangles, unique vertices (after welding identical positions), format (binary or ASCII) and file size, plus the model name stored in the file.
+- **Print check:**
+  - **Watertight** when every edge joins exactly two triangles. Otherwise it shows how many **open edges** (holes) and how many **edges shared by three or more faces** there are.
+  - Warnings for **inside-out faces** and **zero-area triangles**.
+- **Estimated weight:** for PLA, PETG, ABS, ASA, TPU, nylon or resin, both solid and as a typical print (a 0.8 mm shell plus 15% infill). This is a rough guide; your slicer's estimate is the one to trust.
+
+**Performance:** a 2-million-triangle (95 MB) binary STL loads in a few seconds. Parsing and analysis take about 2 seconds of that; the rest is the GPU upload. Files up to 800 MB are accepted. Smooth shading is limited to 3 million triangles.
+
+**Keys:** **R** reset view, **W** cycle Solid → Edges → Wire, **A** auto-rotate, **G** grid.
+
+The open model stays loaded while you visit other tools. Display options are remembered.
+
 ---
 
 ## Keyboard shortcuts
@@ -277,7 +318,7 @@ Open a `.sql` dump or a SQLite database file (`.db`, `.sqlite`, `.sqlite3`) with
 | Anywhere | `T` | Toggle dark mode |
 | Anywhere | `Esc` | Leave a text field, close a dialog, or go back home |
 | Dialogs | `Ctrl/⌘ + Enter` | Confirm (save) |
-| Home | `1`–`7` | Open a tool |
+| Home | `1`–`8` | Open a tool |
 | Home | `/` | Search tools, then `Enter` to open the first match |
 | JSON | `Ctrl/⌘ + Shift + F` | Format input as pretty JSON |
 | Habits | `N` | New habit |
@@ -285,6 +326,7 @@ Open a `.sql` dump or a SQLite database file (`.db`, `.sqlite`, `.sqlite3`) with
 | Workouts | `N` | Log a workout |
 | SQL viewer | `/` | Focus the search box |
 | SQL viewer | `J` / `K` (or `→` / `←`) | Next / previous page |
+| STL viewer | `R` / `W` / `A` / `G` | Reset view / cycle wireframe / auto-rotate / grid |
 
 Shortcuts are ignored while you're typing in a field.
 
@@ -348,7 +390,8 @@ util_app/
 │       ├── encode.js     Encoder toolbox (6 tabs)
 │       ├── habits.js     Habit grid
 │       ├── workouts.js   Workout logger (+ SVG chart)
-│       └── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
+│       ├── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
+│       └── stl.js        STL viewer (STL parser, mesh analysis, WebGL renderer, orbit controls)
 ├── .nojekyll
 └── README.md
 ```
@@ -360,7 +403,7 @@ There are no dependencies and no build step. The scripts are plain classic scrip
 ## How it works
 
 - **Router.** `#/<tool-id>` selects a tool. When you switch tools, the router calls the previous tool's cleanup function, which removes intervals, workers, observers and key listeners. It then mounts the new tool into `#view` and sets the `--h` accent hue for that page.
-- **Tools** register themselves with `U.register({...})`. The order of the `<script>` tags in `index.html` sets the order on the home page and the `1`–`7` shortcuts.
+- **Tools** register themselves with `U.register({...})`. The order of the `<script>` tags in `index.html` sets the order on the home page and the `1`–`8` shortcuts.
 - **Theme.** A tiny inline script picks the theme before first paint, so there's no flash. Colours are CSS custom properties on `:root` and `:root[data-theme="dark"]`. Accents are `oklch(L C hue)`, with lightness and chroma tuned for each theme, so every hue looks balanced in both.
 - **Lenient JSON parser.** A hand-written recursive-descent parser. In strict mode it raises an error at the first non-standard construct, with an exact line and column. In loose mode it records each repair category instead, which gives Repair its summary.
 - **Regex worker.** Built from a Blob URL. Each run gets an id, and stale results are dropped. If a job doesn't answer within 1.5 s, the worker is terminated and recreated.
@@ -425,7 +468,7 @@ Helpers available on `U`:
 
 ## Browser support
 
-Current Chrome, Edge, Firefox and Safari, on desktop and mobile. The app uses CSS `oklch()`, `color-mix()`, `:has()`-free selectors, `dvh` units, `ResizeObserver`, Web Workers, `TextEncoder`/`TextDecoder` and Web Crypto. View Transitions are used for the theme switch when available and skipped otherwise.
+Current Chrome, Edge, Firefox and Safari, on desktop and mobile. The app uses CSS `oklch()`, `color-mix()`, `:has()`-free selectors, `dvh` units, `ResizeObserver`, WebGL (STL viewer), Web Workers, `TextEncoder`/`TextDecoder` and Web Crypto. View Transitions are used for the theme switch when available and skipped otherwise.
 
 ---
 

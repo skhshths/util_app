@@ -552,6 +552,46 @@ button.sql-link:hover, .sql-grid tr.hit:hover .sql-link { text-decoration: under
 .sql-obj summary { padding: 9px 12px; cursor: pointer; font-size: 13.5px; display: flex; gap: 8px; align-items: center; }
 .sql-obj pre { border-top: 1px solid var(--border); }
 
+/* ---------- STL viewer ---------- */
+.stl-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; align-items: start; }
+.stl-stage { position: relative; height: min(72vh, 720px); min-height: 380px; overflow: hidden; touch-action: none;
+  background: radial-gradient(120% 90% at 50% 0%, var(--surface) 0%, var(--surface-2) 100%); }
+.stl-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; outline: none; }
+.stl-stage.grabbing canvas { cursor: grabbing; }
+.stl-stage.over { box-shadow: 0 0 0 2px var(--accent), var(--shadow-md); }
+.stl-bar { position: absolute; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; pointer-events: none; z-index: 2; }
+.stl-bar > * { pointer-events: auto; }
+.stl-top { top: 12px; justify-content: space-between; }
+.stl-bottom { bottom: 12px; }
+.stl-bar .seg { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+.stl-tog { height: 30px; padding: 0 11px; border-radius: 8px; font-size: 12.5px; font-weight: 500; color: var(--text-2); border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: color .15s, background-color .15s, border-color .15s; }
+.stl-tog:hover { color: var(--text); }
+.stl-tog[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in oklch, var(--accent) 45%, var(--border)); background: color-mix(in oklch, var(--accent) 12%, var(--surface)); }
+.stl-colors { display: inline-flex; gap: 5px; padding: 5px 7px; border-radius: 99px; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); margin-left: auto; }
+.stl-color { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); transition: transform .2s var(--spring); }
+.stl-color:hover { transform: scale(1.15); }
+.stl-color[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text-2); }
+.stl-bottom .icon-btn { background: color-mix(in srgb, var(--surface) 82%, transparent); border: 1px solid var(--border); }
+.stl-drop { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; color: var(--text-2); font-size: 14px; z-index: 1; }
+.stl-drop b { color: var(--text); font-size: 16px; }
+.stl-busy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--surface) 70%, transparent); z-index: 3; font-size: 14px; color: var(--text-2); }
+.stl-busy .spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--track); border-top-color: var(--accent); animation: stlspin .8s linear infinite; }
+@keyframes stlspin { to { transform: rotate(360deg); } }
+.stl-info .panel-head .panel-title { flex: 1; }
+.stl-dims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stl-dims > div { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.stl-dims b { font-size: 17px; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; }
+.stl-dims .ax { font-size: 11px; font-weight: 700; }
+.stl-dims .ax-x { color: #e5534b; } .stl-dims .ax-y { color: #3fb07a; } .stl-dims .ax-z { color: #5b8def; }
+.stl-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; font-size: 13px; margin-top: 8px; }
+.stl-check svg.i { width: 16px; height: 16px; margin-top: 2px; }
+.stl-check b { display: block; }
+.stl-check span { color: var(--text-2); }
+.stl-check.ok { background: color-mix(in srgb, var(--ok) 10%, transparent); color: var(--ok); }
+.stl-check.warn { background: color-mix(in srgb, var(--warn) 11%, transparent); color: var(--warn); }
+.stl-keys dd { color: var(--text-2); }
+
 /* ---------- Modals ---------- */
 .backdrop { position: fixed; inset: 0; background: var(--backdrop); opacity: 0; pointer-events: none; transition: opacity .35s var(--ease); z-index: 40; }
 .modal-root { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; pointer-events: none; visibility: hidden; transition: visibility 0s .3s; }
@@ -617,6 +657,7 @@ button.sql-link:hover, .sql-grid tr.hit:hover .sql-link { text-decoration: under
 }
 @media (max-width: 1000px) {
   .wo-layout { grid-template-columns: 1fr; }
+  .stl-layout { grid-template-columns: 1fr; }
   .sql-layout { grid-template-columns: 1fr; }
   .sql-side { position: static; max-height: 320px; }
 }
