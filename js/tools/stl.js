@@ -1,6 +1,6 @@
 /* =========================================================================
-   Tool: STL viewer
-   Open a binary or ASCII .stl file and inspect it in 3D: drag to rotate,
+   Tool: 3D model viewer (STL, OBJ, 3MF)
+   Open a binary or ASCII .stl, an .obj or a .3mf file and inspect it in 3D: drag to rotate,
    right-drag (or Shift-drag) to pan, scroll or pinch to zoom. A small
    dependency-free WebGL renderer with studio lighting, wireframe, grid,
    view presets and print-oriented model info (size, volume, area,
@@ -45,6 +45,143 @@
     if (!tris) throw new Error('No triangles found in this ASCII STL.');
     var nm = /^\s*solid\s+([^\r\n]*)/i.exec(text);
     return { positions: new Float32Array(vals.slice(0, tris * 9)), triangles: tris, format: 'ASCII', name: nm ? nm[1].trim() : '' };
+  }
+
+  /* ---------- OBJ ---------- */
+  // Vertices ("v x y z") and faces ("f 1 2 3 4", "f 1/1/1 …", negative = relative).
+  // Polygons are split into triangles as a fan. Everything else is ignored.
+  function parseOBJ(text) {
+    var verts = [], out = [], groups = 0, bad = 0, i = 0, n = text.length;
+    while (i < n) {
+      var e = text.indexOf('\n', i); if (e === -1) e = n;
+      var c0 = text.charCodeAt(i), c1 = text.charCodeAt(i + 1);
+      if (c0 === 118 && (c1 === 32 || c1 === 9)) {               // "v "
+        var p = text.slice(i + 2, e).trim().split(/\s+/);
+        verts.push(+p[0], +p[1], +p[2]);
+      } else if (c0 === 102 && (c1 === 32 || c1 === 9)) {        // "f "
+        var f = text.slice(i + 2, e).trim().split(/\s+/), idx = [], nv = verts.length / 3;
+        for (var k = 0; k < f.length; k++) {
+          var v = parseInt(f[k], 10);
+          if (isNaN(v)) continue;
+          v = v < 0 ? nv + v : v - 1;
+          if (v < 0 || v >= nv) { bad++; idx = null; break; }
+          idx.push(v);
+        }
+        if (idx) for (k = 1; k + 1 < idx.length; k++) {
+          var a = idx[0] * 3, b = idx[k] * 3, cc = idx[k + 1] * 3;
+          out.push(verts[a], verts[a + 1], verts[a + 2], verts[b], verts[b + 1], verts[b + 2], verts[cc], verts[cc + 1], verts[cc + 2]);
+        }
+      } else if ((c0 === 111 || c0 === 103) && c1 === 32) groups++; // "o " / "g "
+      i = e + 1;
+    }
+    if (!out.length) throw new Error(verts.length ? 'This OBJ has vertices but no faces (it may be a point cloud).' : 'No geometry found in this OBJ file.');
+    return { positions: new Float32Array(out), triangles: out.length / 9, format: 'OBJ' + (groups > 1 ? ' · ' + groups + ' groups' : ''), name: '', note: bad ? bad + ' faces pointed at missing vertices and were skipped' : '' };
+  }
+
+  /* ---------- 3MF (a ZIP of XML) ---------- */
+  async function unzip(buf) {
+    var b = new Uint8Array(buf), dv = new DataView(buf), eocd = -1;
+    for (var i = b.length - 22; i >= Math.max(0, b.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error('This 3MF file is not a valid ZIP archive.');
+    var count = dv.getUint16(eocd + 10, true), off = dv.getUint32(eocd + 16, true);
+    if (off === 0xffffffff) throw new Error('This 3MF uses ZIP64, which is not supported.');
+    var files = {}, td = new TextDecoder();
+    for (var k = 0; k < count; k++) {
+      if (dv.getUint32(off, true) !== 0x02014b50) break;
+      var method = dv.getUint16(off + 10, true), csize = dv.getUint32(off + 20, true);
+      var nlen = dv.getUint16(off + 28, true), xlen = dv.getUint16(off + 30, true), clen = dv.getUint16(off + 32, true), local = dv.getUint32(off + 42, true);
+      var name = td.decode(b.subarray(off + 46, off + 46 + nlen));
+      files[name.replace(/^\//, '')] = { method: method, csize: csize, local: local };
+      off += 46 + nlen + xlen + clen;
+    }
+    return {
+      names: Object.keys(files),
+      read: async function (name) {
+        var f = files[name.replace(/^\//, '')];
+        if (!f) throw new Error('Missing part in 3MF: ' + name);
+        var start = f.local + 30 + dv.getUint16(f.local + 26, true) + dv.getUint16(f.local + 28, true);
+        var data = b.subarray(start, start + f.csize);
+        if (f.method === 0) return td.decode(data);
+        if (f.method !== 8) throw new Error('Unsupported compression in 3MF (method ' + f.method + ').');
+        if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot unzip 3MF files. Try a current Chrome, Edge, Firefox or Safari.');
+        var stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return new Response(stream).text();
+      }
+    };
+  }
+  var UNIT_MM = { micron: 0.001, millimeter: 1, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 };
+  function attrs(s) { var o = {}, re = /([\w:-]+)\s*=\s*"([^"]*)"/g, m; while ((m = re.exec(s))) o[m[1].replace(/^[\w-]+:(?=path$)/, 'p:')] = m[2]; return o; }
+  function readModel(xml) {
+    var model = { unit: 1, objects: {}, build: [], title: '' };
+    var mm = /<(?:[\w-]+:)?model\b([^>]*)>/.exec(xml);
+    if (mm) { var u = attrs(mm[1]).unit; if (u && UNIT_MM[u]) model.unit = UNIT_MM[u]; }
+    var t = /<(?:[\w-]+:)?metadata\s+name="Title"[^>]*>([^<]*)</i.exec(xml); if (t) model.title = t[1].trim();
+    var objRe = /<(?:[\w-]+:)?object\b([^>]*)>([\s\S]*?)<\/(?:[\w-]+:)?object>/g, m;
+    while ((m = objRe.exec(xml))) {
+      var a = attrs(m[1]), body = m[2], o = { verts: null, tris: null, comps: [] };
+      var vs = [], vre = /<(?:[\w-]+:)?vertex\b([^>]*)>/g, vm;
+      while ((vm = vre.exec(body))) { var va = attrs(vm[1]); vs.push(+va.x, +va.y, +va.z); }
+      var ts = [], tre = /<(?:[\w-]+:)?triangle\b([^>]*)>/g, tm;
+      while ((tm = tre.exec(body))) { var ta = attrs(tm[1]); ts.push(+ta.v1, +ta.v2, +ta.v3); }
+      if (vs.length) { o.verts = vs; o.tris = ts; }
+      var cre = /<(?:[\w-]+:)?component\b([^>]*)>/g, cm;
+      while ((cm = cre.exec(body))) { var ca = attrs(cm[1]); o.comps.push({ id: ca.objectid, t: parseT(ca.transform), path: ca['p:path'] }); }
+      model.objects[a.id] = o;
+    }
+    var bre = /<(?:[\w-]+:)?item\b([^>]*)>/g, bm;
+    var build = /<(?:[\w-]+:)?build\b[^>]*>([\s\S]*?)<\/(?:[\w-]+:)?build>/.exec(xml);
+    if (build) while ((bm = bre.exec(build[1]))) { var ba = attrs(bm[1]); model.build.push({ id: ba.objectid, t: parseT(ba.transform), path: ba['p:path'] }); }
+    return model;
+  }
+  // 3MF transforms are 4x3 row-major: x' = x*m00 + y*m10 + z*m20 + m30, and so on.
+  function parseT(s) { if (!s) return null; var v = s.trim().split(/\s+/).map(Number); return v.length === 12 ? v : null; }
+  function composeT(a, b) { // apply a, then b
+    if (!a) return b; if (!b) return a;
+    var o = new Array(12);
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 3; c++) o[r * 3 + c] = a[r * 3] * b[c] + a[r * 3 + 1] * b[3 + c] + a[r * 3 + 2] * b[6 + c] + (r === 3 ? b[9 + c] : 0);
+    return o;
+  }
+  async function parse3MF(buf) {
+    var zip = await unzip(buf), models = {};
+    var rels = zip.names.indexOf('_rels/.rels') !== -1 ? await zip.read('_rels/.rels') : '';
+    var start = (/Target="([^"]+)"[^>]*Type="[^"]*3dmodel"/.exec(rels) || /Type="[^"]*3dmodel"[^>]*Target="([^"]+)"/.exec(rels) || [])[1];
+    var modelNames = zip.names.filter(function (n) { return /\.model$/i.test(n); });
+    if (!modelNames.length) throw new Error('No 3D model part found in this 3MF file.');
+    start = (start || '3D/3dmodel.model').replace(/^\//, '');
+    if (modelNames.indexOf(start) === -1) start = modelNames[0];
+    for (var i = 0; i < modelNames.length; i++) models[modelNames[i]] = readModel(await zip.read(modelNames[i]));
+    var root = models[start], out = [], objects = 0;
+    function emit(path, id, T, depth) {
+      var mdl = models[(path || start).replace(/^\//, '')], o = mdl && mdl.objects[id];
+      if (!o || depth > 16) return;
+      if (o.verts) {
+        objects++;
+        var v = o.verts, tr = o.tris, s = mdl.unit, flip = T && (T[0] * (T[4] * T[8] - T[5] * T[7]) - T[1] * (T[3] * T[8] - T[5] * T[6]) + T[2] * (T[3] * T[7] - T[4] * T[6])) < 0;
+        for (var k = 0; k < tr.length; k += 3) {
+          var order = flip ? [tr[k], tr[k + 2], tr[k + 1]] : [tr[k], tr[k + 1], tr[k + 2]];
+          for (var j = 0; j < 3; j++) {
+            var x = v[order[j] * 3], y = v[order[j] * 3 + 1], z = v[order[j] * 3 + 2];
+            if (T) { var X = x * T[0] + y * T[3] + z * T[6] + T[9], Y = x * T[1] + y * T[4] + z * T[7] + T[10], Z = x * T[2] + y * T[5] + z * T[8] + T[11]; x = X; y = Y; z = Z; }
+            out.push(x * s, y * s, z * s);
+          }
+        }
+      }
+      o.comps.forEach(function (c) { emit(c.path || path, c.id, composeT(c.t, T), depth + 1); });
+    }
+    if (root.build.length) root.build.forEach(function (it) { emit(it.path, it.id, it.t, 0); });
+    else Object.keys(root.objects).forEach(function (id) { emit(null, id, null, 0); });
+    if (!out.length) throw new Error('This 3MF file has no printable meshes.');
+    return { positions: new Float32Array(out), triangles: out.length / 9, format: '3MF · ' + objects + (objects === 1 ? ' object' : ' objects'), name: root.title };
+  }
+
+  // Picks the parser from the extension, or by sniffing the bytes.
+  async function parseModel(name, buf) {
+    var ext = (/\.([a-z0-9]+)$/i.exec(name) || [])[1];
+    ext = ext ? ext.toLowerCase() : '';
+    var head = new Uint8Array(buf, 0, Math.min(buf.byteLength, 4096));
+    if (ext === '3mf' || (head[0] === 0x50 && head[1] === 0x4b)) return parse3MF(buf);
+    if (ext === 'obj' || (ext !== 'stl' && /^(#.*\n|\s*\n)*\s*(v|vn|vt|o|g|mtllib|f)\s/m.test(new TextDecoder().decode(head)))) return parseOBJ(new TextDecoder().decode(buf));
+    return parseSTL(buf);
   }
 
   /* ---------- Geometry ---------- */
@@ -247,11 +384,11 @@
 
   U.register({
     id: 'stl',
-    name: 'STL viewer',
-    desc: 'Open a 3D model and spin it around. See its size, volume, surface area, whether it is watertight and roughly what it would weigh printed.',
+    name: '3D model viewer',
+    desc: 'Open an STL, OBJ or 3MF model and spin it around. See its size, volume, surface area, whether it is watertight and roughly what it would weigh printed.',
     hue: 30,
     icon: 'cube',
-    keywords: ['stl', '3d', 'model', 'viewer', 'print', '3d print', 'mesh', 'cad', 'rotate', 'obj', 'slicer'],
+    keywords: ['stl', 'obj', '3mf', '3d', 'model', 'viewer', 'print', '3d print', 'mesh', 'cad', 'rotate', 'slicer', 'wavefront'],
     shortcuts: [['Reset the view', ['R']], ['Toggle wireframe', ['W']], ['Toggle auto-rotate', ['A']], ['Toggle grid', ['G']]],
     homeStat: function () {
       if (M) return '<span class="dot"></span>Open: <b>' + U.esc(M.file) + '</b> · ' + U.fmtNum(M.triangles, 0) + ' triangles';
@@ -261,12 +398,12 @@
     mount: function (root) {
       root.innerHTML =
         '<div class="tool-head"><div>' +
-          '<h1><span class="tool-icon">' + U.icon('cube') + '</span>STL viewer</h1>' +
+          '<h1><span class="tool-icon">' + U.icon('cube') + '</span>3D model viewer</h1>' +
           '<p>Drag to rotate, right-drag or Shift-drag to pan, scroll or pinch to zoom. Files never leave your device.</p>' +
         '</div><div class="tool-head-actions">' +
           '<button class="btn btn-ghost btn-sm" data-act="sample">' + U.icon('sparkles') + 'Sample</button>' +
           '<button class="btn btn-ghost btn-sm" data-act="shot" id="stlShot">' + U.icon('download') + 'Screenshot</button>' +
-          '<button class="btn btn-soft btn-sm" data-act="open">' + U.icon('file') + 'Open .stl</button>' +
+          '<button class="btn btn-soft btn-sm" data-act="open">' + U.icon('file') + 'Open model</button>' +
         '</div></div>' +
         '<div class="stl-layout">' +
           '<section class="panel stl-stage" id="stlStage">' +
@@ -280,7 +417,7 @@
               '<span class="stl-colors">' + COLORS.map(function (c) { return '<button class="stl-color" data-color="' + c[1] + '" title="' + c[0] + '" aria-label="' + c[0] + '" style="background:' + c[1] + '"></button>'; }).join('') + '</span>' +
               '<button class="icon-btn sm" data-act="fit" title="Reset view (R)" aria-label="Reset view">' + U.icon('reset') + '</button>' +
             '</div>' +
-            '<div class="stl-drop" id="stlDrop"><div class="tool-icon" style="width:52px;height:52px">' + U.icon('cube') + '</div><b>Drop an .stl file here</b><span>or <button class="sql-link" data-act="open">browse</button>, or try the <button class="sql-link" data-act="sample">sample model</button></span></div>' +
+            '<div class="stl-drop" id="stlDrop"><div class="tool-icon" style="width:52px;height:52px">' + U.icon('cube') + '</div><b>Drop an .stl, .obj or .3mf file here</b><span>or <button class="sql-link" data-act="open">browse</button>, or try the <button class="sql-link" data-act="sample">sample model</button></span></div>' +
             '<div class="stl-busy" id="stlBusy" hidden><span class="spin"></span><span id="stlBusyText">Loading…</span></div>' +
           '</section>' +
           '<aside class="panel stl-info" id="stlInfo"></aside>' +
@@ -499,7 +636,7 @@
       var UNITS = { mm: [1, 'mm'], cm: [10, 'cm'], in: [25.4, 'in'] };
       function paintInfo() {
         if (!M) {
-          info.innerHTML = '<div class="panel-body"><p class="section-label">Model</p><p class="muted" style="margin:0;font-size:13.5px">Open an .stl file to see its size, volume and print details. Binary and ASCII STL are supported.</p>' +
+          info.innerHTML = '<div class="panel-body"><p class="section-label">Model</p><p class="muted" style="margin:0;font-size:13.5px">Open a model to see its size, volume and print details. Supports STL (binary and ASCII), OBJ and 3MF.</p>' +
             '<p class="section-label" style="margin-top:20px">Controls</p><dl class="kv stl-keys"><dt>Rotate</dt><dd>Drag</dd><dt>Pan</dt><dd>Right-drag or Shift-drag</dd><dt>Zoom</dt><dd>Scroll or pinch</dd><dt>Reset</dt><dd>Double-click or R</dd></dl></div>';
           return;
         }
@@ -543,14 +680,12 @@
       function showBusy(text) { busy.hidden = !text; if (text) U.$('#stlBusyText', busy).textContent = text; }
       function load(file) {
         if (!file) return;
-        if (!/\.stl$/i.test(file.name) && file.type !== 'model/stl') U.toast('Opening as STL (the file name does not end in .stl)');
         if (file.size > 800 * 1048576) { U.toast('That file is over 800 MB, which is too large to view in a browser'); return; }
         showBusy('Reading ' + file.name + '…');
         file.arrayBuffer().then(function (buf) {
           showBusy('Building the model…');
-          return new Promise(function (r) { setTimeout(r, 30); }).then(function () {
-            var t0 = performance.now();
-            var parsed = parseSTL(buf);
+          var t0 = performance.now();
+          return new Promise(function (r) { setTimeout(r, 30); }).then(function () { return parseModel(file.name, buf); }).then(function (parsed) {
             var g = analyse(parsed.positions);
             var size = [g.max[0] - g.min[0], g.max[1] - g.min[1], g.max[2] - g.min[2]];
             var c = [(g.max[0] + g.min[0]) / 2, (g.max[1] + g.min[1]) / 2, (g.max[2] + g.min[2]) / 2];
@@ -563,7 +698,7 @@
             U.store.set('stl-last', { name: file.name });
             upload(); setView('iso'); fit('iso');
             drop.hidden = true; showBusy(null); paintInfo();
-            U.toast('Loaded ' + U.fmtNum(M.triangles, 0) + ' triangles in ' + Math.round(performance.now() - t0) + ' ms');
+            U.toast((parsed.note ? parsed.note + '. ' : '') + 'Loaded ' + U.fmtNum(M.triangles, 0) + ' triangles in ' + Math.round(performance.now() - t0) + ' ms', { duration: parsed.note ? 6000 : 2400 });
           });
         }).catch(function (err) { showBusy(null); U.toast(err.message || 'Could not open that file', { duration: 6000 }); });
       }
@@ -573,7 +708,7 @@
         var a = e.target.closest('[data-act]');
         if (a) {
           var act = a.dataset.act;
-          if (act === 'open') U.pickFile('.stl,model/stl,application/sla').then(load);
+          if (act === 'open') U.pickFile('.stl,.obj,.3mf,model/stl,model/obj,model/3mf,application/sla').then(load);
           if (act === 'sample') load(sampleSTL());
           if (act === 'fit') { setView('iso'); fit('iso'); }
           if (act === 'shot') {
@@ -581,7 +716,7 @@
             dirty = true; draw(performance.now());
             canvas.toBlob(function (b) {
               var url = URL.createObjectURL(b), l = document.createElement('a');
-              l.href = url; l.download = M.file.replace(/\.stl$/i, '') + '.png'; document.body.appendChild(l); l.click(); l.remove();
+              l.href = url; l.download = M.file.replace(/\.(stl|obj|3mf)$/i, '') + '.png'; document.body.appendChild(l); l.click(); l.remove();
               setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
             });
           }

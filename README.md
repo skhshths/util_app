@@ -11,7 +11,7 @@ A calm, minimal set of eight everyday tools in one static web app. A sleek home 
 | 5 | **Habit grid** | A GitHub-style year grid for each habit, with streaks, 30-day completion and per-weekday schedules. |
 | 6 | **Workout logger** | Logs sets × reps × weight, can repeat a previous session, and charts your progress (estimated 1RM, top set, volume, reps) and personal records. |
 | 7 | **SQL viewer** | Opens SQL dumps (MySQL, MariaDB, PostgreSQL, SQLite) and SQLite database files of any size, multi-gigabyte included. Huge tables are shown a page at a time, and a full-file search finds specific rows. |
-| 8 | **STL viewer** | Opens 3D models (binary or ASCII STL) in an interactive WebGL view you can rotate, pan and zoom. Shows the model's size, volume, surface area, whether it is watertight, and an estimated print weight. |
+| 8 | **3D model viewer** | Opens STL (binary or ASCII), OBJ and 3MF models in an interactive WebGL view you can rotate, pan and zoom. Shows the model's size, volume, surface area, whether it is watertight, and an estimated print weight. |
 
 The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): Inter, warm neutrals, soft cards, oklch accent colours, light and dark themes, and small spring animations.
 
@@ -29,7 +29,7 @@ The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): I
   - [Habit grid](#5-habit-grid)
   - [Workout logger](#6-workout-logger)
   - [SQL viewer](#7-sql-viewer)
-  - [STL viewer](#8-stl-viewer)
+  - [3D model viewer](#8-3d-model-viewer-stl-obj-3mf)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data, backups and privacy](#data-backups-and-privacy)
 - [Hosting it](#hosting-it)
@@ -269,9 +269,19 @@ Open a `.sql` dump or a SQLite database file (`.db`, `.sqlite`, `.sqlite3`) with
 - Views are listed with their SQL but not evaluated; this is a viewer, not a query engine.
 - Exotic syntax inside an `INSERT`, such as `ON DUPLICATE KEY UPDATE … VALUES(x)`, can make that statement's row count off by one.
 
-### 8. STL viewer
+### 8. 3D model viewer (STL, OBJ, 3MF)
 
-Open an `.stl` file with **Open .stl**, drag it onto the viewer, or click **Sample** for a trefoil knot on a hexagonal plinth.
+Open a model with **Open model**, drag it onto the viewer, or click **Sample** for a trefoil knot on a hexagonal plinth.
+
+**Supported files**
+
+| Format | What's read |
+| --- | --- |
+| **STL** | Binary and ASCII. Binary files whose 80-byte header starts with "solid" are detected correctly, and a wrong triangle count is corrected from the file size. |
+| **OBJ** | `v` vertices and `f` faces in any of the `1`, `1/2`, `1//3` or `1/2/3` forms, including negative (relative) indices. Polygons with more than 3 sides are split into triangles. Materials, textures and normals are ignored, since the viewer shows shape only. |
+| **3MF** | The ZIP package is unpacked in the browser. It reads every mesh object, component assemblies (including parts stored in separate model files), build-item transforms (position, rotation, scale and mirroring, with triangle winding fixed for mirrors), the model's unit (micron, mm, cm, inch, foot or metre, all converted to mm) and the title. Colors and materials are ignored. |
+
+The file type is picked from the extension, or from the file's contents if the extension is missing or unknown.
 
 **Moving around**
 
@@ -326,7 +336,7 @@ The open model stays loaded while you visit other tools. Display options are rem
 | Workouts | `N` | Log a workout |
 | SQL viewer | `/` | Focus the search box |
 | SQL viewer | `J` / `K` (or `→` / `←`) | Next / previous page |
-| STL viewer | `R` / `W` / `A` / `G` | Reset view / cycle wireframe / auto-rotate / grid |
+| 3D model viewer | `R` / `W` / `A` / `G` | Reset view / cycle wireframe / auto-rotate / grid |
 
 Shortcuts are ignored while you're typing in a field.
 
@@ -391,7 +401,7 @@ util_app/
 │       ├── habits.js     Habit grid
 │       ├── workouts.js   Workout logger (+ SVG chart)
 │       ├── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
-│       └── stl.js        STL viewer (STL parser, mesh analysis, WebGL renderer, orbit controls)
+│       └── stl.js        3D model viewer (STL/OBJ/3MF parsers, mesh analysis, WebGL renderer, orbit controls)
 ├── .nojekyll
 └── README.md
 ```
@@ -468,7 +478,7 @@ Helpers available on `U`:
 
 ## Browser support
 
-Current Chrome, Edge, Firefox and Safari, on desktop and mobile. The app uses CSS `oklch()`, `color-mix()`, `:has()`-free selectors, `dvh` units, `ResizeObserver`, WebGL (STL viewer), Web Workers, `TextEncoder`/`TextDecoder` and Web Crypto. View Transitions are used for the theme switch when available and skipped otherwise.
+Current Chrome, Edge, Firefox and Safari, on desktop and mobile. The app uses CSS `oklch()`, `color-mix()`, `:has()`-free selectors, `dvh` units, `ResizeObserver`, WebGL and `DecompressionStream` (3D model viewer), Web Workers, `TextEncoder`/`TextDecoder` and Web Crypto. View Transitions are used for the theme switch when available and skipped otherwise.
 
 ---
 
