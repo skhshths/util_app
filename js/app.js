@@ -158,6 +158,11 @@
     chart: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
     columns: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
     rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/>',
+    gitCompare: '<circle cx="5" cy="6" r="3"/><path d="M12 6h5a2 2 0 0 1 2 2v7"/><path d="m15 9-3-3 3-3"/><circle cx="19" cy="18" r="3"/><path d="M12 18H7a2 2 0 0 1-2-2V9"/><path d="m9 15 3 3-3 3"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    key: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+    user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+    external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
     cube: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
     database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>'
   };
@@ -468,7 +473,8 @@
   /* ---------- Data: export, import, reset ---------- */
   function exportAll() {
     var data = {};
-    U.store.keys().forEach(function (k) { data[k] = U.store.get(k); });
+    // Secrets such as API tokens stay in this browser and are never exported.
+    U.store.keys().forEach(function (k) { if (!/-token$/.test(k)) data[k] = U.store.get(k); });
     U.download('utilities-backup-' + U.dayKey() + '.json', JSON.stringify({ app: 'utilities', version: 1, exportedAt: new Date().toISOString(), data: data }, null, 2));
     U.toast('Backup downloaded');
   }

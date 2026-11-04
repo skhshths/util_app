@@ -1,6 +1,6 @@
 # Utilities
 
-A calm, minimal set of eight everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
+A calm, minimal set of nine everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
 
 | # | Tool | What it does |
 | --- | --- | --- |
@@ -12,6 +12,7 @@ A calm, minimal set of eight everyday tools in one static web app. A sleek home 
 | 6 | **Workout logger** | Logs sets × reps × weight, can repeat a previous session, and charts your progress (estimated 1RM, top set, volume, reps) and personal records. |
 | 7 | **SQL viewer** | Opens SQL dumps (MySQL, MariaDB, PostgreSQL, SQLite) and SQLite database files of any size, multi-gigabyte included. Huge tables are shown a page at a time, and a full-file search finds specific rows. |
 | 8 | **3D model viewer** | Opens STL (binary or ASCII), OBJ and 3MF models in an interactive WebGL view you can rotate, pan and zoom. Shows the model's size, volume, surface area, whether it is watertight, and an estimated print weight. |
+| 9 | **Repo changelog** | Compares the commits of one or more GitHub repos side by side: a timeline with days lined up across repos, a changelog grouped by version and change type, and activity stats. Click a commit to see its files and diff. |
 
 The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): Inter, warm neutrals, soft cards, oklch accent colours, light and dark themes, and small spring animations.
 
@@ -30,6 +31,7 @@ The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): I
   - [Workout logger](#6-workout-logger)
   - [SQL viewer](#7-sql-viewer)
   - [3D model viewer](#8-3d-model-viewer-stl-obj-3mf)
+  - [Repo changelog](#9-repo-changelog)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data, backups and privacy](#data-backups-and-privacy)
 - [Hosting it](#hosting-it)
@@ -69,12 +71,12 @@ Each tool has a **Sample** or **Try examples** button, so you can see it working
 ## The home page
 
 - Each tool is a card with an icon, a short description and a live status line. Examples: “Draft saved · 2.1 KB”, “2/4 done today” (with a 14-day mini grid) or “Last: Yesterday · 3 in 7 days”.
-- Press **1–8** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
+- Press **1–9** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
 - The **☾/☀** button switches light and dark mode. Your choice is remembered; until you pick one, the app follows your system setting.
 - The **⋯** menu has **Export backup**, **Import backup**, **Keyboard shortcuts** and **Erase all data**.
 - Inside a tool, the breadcrumb at the top shows where you are. Click **Utilities** or press **Esc** to go back.
 
-URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`), so you can bookmark a tool directly.
+URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`, `#/changelog`), so you can bookmark a tool directly.
 
 ---
 
@@ -318,6 +320,55 @@ The file type is picked from the extension, or from the file's contents if the e
 
 The open model stays loaded while you visit other tools. Display options are remembered.
 
+### 9. Repo changelog
+
+Compare what changed in one or more GitHub repositories, side by side.
+
+**Adding repos**
+- Type `owner/repo` and press **Enter**, or paste one or more GitHub URLs (`https://github.com/owner/repo`, `.git` and SSH forms work too). Separate several with commas.
+- **From a user** lists a user's or organization's public repos, most recently pushed first, with checkboxes. Typing just a username in the box does the same.
+- Up to 8 repos at a time, each with its own color. **Backspace** in an empty box removes the last one.
+
+**Range and options:** 7 days, 30 days, 90 days, 1 year, All, or a custom date range. You can also **hide merge commits** and set the most commits loaded per repo (100, 300 or 1,000).
+
+**Timeline:** one column per repo, with a row for every day that has a commit in *any* repo, grouped under month headings. Days line up across columns, so you can see who changed what, and when, at a glance.
+- **Column headers:** a link to the repo, its description, commit and author counts, the default branch, contributor avatars and an activity sparkline. They stay pinned while you scroll.
+- **Commit cards:** the message's first line, a type label, the author, the time and the short SHA. Tagged commits show their tag.
+- **Busy days:** only the first 5 commits show; **+N more** shows the rest. Days with nothing in a repo are hatched.
+
+**Changelog:** for each repo, side by side, commits are split into **versions** at every tag (newer, untagged commits go under *Unreleased*), then grouped by type:
+
+| Type | How it's detected |
+| --- | --- |
+| Features, Fixes, Performance, Refactoring, Docs, Tests, Build & CI, Chores, Reverts | Conventional-commit prefixes (`feat:`, `fix(scope):`, `docs:` …), or the first word of the message (*Add*, *Fix*, *Refactor*, *Update README* …) |
+| Breaking changes | `!` after the type, or `BREAKING CHANGE` in the message body |
+| Merges | Hidden by default |
+| Other changes | Anything else |
+
+**Copy as Markdown** turns a repo's changelog into release-notes Markdown, with commit links.
+
+**Stats:** for each repo:
+- commits, active days and commits per active day
+- a bar of the types of change
+- a day × hour heatmap of when commits happen
+- the top authors
+
+Below, a combined **commits per week** chart compares all the repos.
+
+**Commit details:** click any commit for:
+- the full message, author and date, and links to GitHub and to copy the SHA
+- every changed file with its status (added, modified, deleted, renamed), lines added and removed, and a change bar
+- the colored diff of a file, when you click it
+
+**Sharing:** **Share** copies a link such as `…/#/changelog?r=owner/a,owner/b&d=90` that opens the same comparison.
+
+**GitHub API and tokens**
+- Data comes straight from the GitHub REST API in your browser. Loading a repo takes about 3 requests, plus 1 for each commit you open.
+- Without a token, GitHub allows **60 requests an hour** per network. The bar above the results shows how many are left and when the limit resets.
+- Responses are cached with ETags, and refreshing unchanged data doesn't count against the limit.
+- **Token** (optional): add a fine-grained personal access token for 5,000 requests an hour, and for **private repos** (give it *Contents: Read-only*). It's stored only in this browser, sent only to `api.github.com`, and never included in shared links.
+- Avatars load from GitHub's image servers.
+
 ---
 
 ## Keyboard shortcuts
@@ -328,7 +379,7 @@ The open model stays loaded while you visit other tools. Display options are rem
 | Anywhere | `T` | Toggle dark mode |
 | Anywhere | `Esc` | Leave a text field, close a dialog, or go back home |
 | Dialogs | `Ctrl/⌘ + Enter` | Confirm (save) |
-| Home | `1`–`8` | Open a tool |
+| Home | `1`–`9` | Open a tool |
 | Home | `/` | Search tools, then `Enter` to open the first match |
 | JSON | `Ctrl/⌘ + Shift + F` | Format input as pretty JSON |
 | Habits | `N` | New habit |
@@ -344,7 +395,7 @@ Shortcuts are ignored while you're typing in a field.
 
 ## Data, backups and privacy
 
-- **Nothing is sent anywhere.** The app makes no network requests apart from loading the Inter font from Google Fonts, and it works fine without it. Files you open, hash or view in the SQL viewer are read in the browser and never uploaded.
+- **Nothing is sent anywhere** except where a tool needs it: the app loads the Inter font from Google Fonts (and works without it), and the Repo changelog talks to the GitHub API. Files you open, hash or view in the SQL viewer are read in the browser and never uploaded.
 - Data lives in `localStorage` under keys that start with `util-app/`:
 
 | Key | Contents |
@@ -401,7 +452,8 @@ util_app/
 │       ├── habits.js     Habit grid
 │       ├── workouts.js   Workout logger (+ SVG chart)
 │       ├── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
-│       └── stl.js        3D model viewer (STL/OBJ/3MF parsers, mesh analysis, WebGL renderer, orbit controls)
+│       ├── stl.js        3D model viewer (STL/OBJ/3MF parsers, mesh analysis, WebGL renderer, orbit controls)
+│       └── changelog.js  Repo changelog (GitHub API client with ETag cache, timeline, changelog, stats)
 ├── .nojekyll
 └── README.md
 ```
@@ -413,7 +465,7 @@ There are no dependencies and no build step. The scripts are plain classic scrip
 ## How it works
 
 - **Router.** `#/<tool-id>` selects a tool. When you switch tools, the router calls the previous tool's cleanup function, which removes intervals, workers, observers and key listeners. It then mounts the new tool into `#view` and sets the `--h` accent hue for that page.
-- **Tools** register themselves with `U.register({...})`. The order of the `<script>` tags in `index.html` sets the order on the home page and the `1`–`8` shortcuts.
+- **Tools** register themselves with `U.register({...})`. The order of the `<script>` tags in `index.html` sets the order on the home page and the `1`–`9` shortcuts.
 - **Theme.** A tiny inline script picks the theme before first paint, so there's no flash. Colours are CSS custom properties on `:root` and `:root[data-theme="dark"]`. Accents are `oklch(L C hue)`, with lightness and chroma tuned for each theme, so every hue looks balanced in both.
 - **Lenient JSON parser.** A hand-written recursive-descent parser. In strict mode it raises an error at the first non-standard construct, with an exact line and column. In loose mode it records each repair category instead, which gives Repair its summary.
 - **Regex worker.** Built from a Blob URL. Each run gets an id, and stale results are dropped. If a job doesn't answer within 1.5 s, the worker is terminated and recreated.
