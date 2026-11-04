@@ -1,6 +1,6 @@
 # Utilities
 
-A calm, minimal set of nine everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
+A calm, minimal set of ten everyday tools in one static web app. A sleek home page lets you pick a tool. Everything runs in your browser: there is no server, no account, no build step and no third-party JavaScript.
 
 | # | Tool | What it does |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ A calm, minimal set of nine everyday tools in one static web app. A sleek home p
 | 7 | **SQL viewer** | Opens SQL dumps (MySQL, MariaDB, PostgreSQL, SQLite) and SQLite database files of any size, multi-gigabyte included. Huge tables are shown a page at a time, and a full-file search finds specific rows. |
 | 8 | **3D model viewer** | Opens STL (binary or ASCII), OBJ and 3MF models in an interactive WebGL view you can rotate, pan and zoom. Shows the model's size, volume, surface area, whether it is watertight, and an estimated print weight. |
 | 9 | **Repo changelog** | Compares the commits of one or more GitHub repos side by side: a timeline with days lined up across repos, a changelog grouped by version and change type, and activity stats. Click a commit to see its files and diff. |
+| 10 | **TikTok viewer** | Saves TikTok video links and plays them back to back in a phone-sized pane using TikTok's official embed player, with keyboard controls and auto-advance. |
 
 The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): Inter, warm neutrals, soft cards, oklch accent colours, light and dark themes, and small spring animations.
 
@@ -32,6 +33,7 @@ The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): I
   - [SQL viewer](#7-sql-viewer)
   - [3D model viewer](#8-3d-model-viewer-stl-obj-3mf)
   - [Repo changelog](#9-repo-changelog)
+  - [TikTok viewer](#10-tiktok-viewer)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data, backups and privacy](#data-backups-and-privacy)
 - [Hosting it](#hosting-it)
@@ -71,12 +73,12 @@ Each tool has a **Sample** or **Try examples** button, so you can see it working
 ## The home page
 
 - Each tool is a card with an icon, a short description and a live status line. Examples: “Draft saved · 2.1 KB”, “2/4 done today” (with a 14-day mini grid) or “Last: Yesterday · 3 in 7 days”.
-- Press **1–9** to open a tool, **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
+- Press **1–9** to open tools 1–9 (tool 10 is opened from its card), **/** to search, and **Enter** in the search box to open the first match. Search matches tool names, descriptions and keywords, so “hash”, “gym”, “epoch” and “streak” all work.
 - The **☾/☀** button switches light and dark mode. Your choice is remembered; until you pick one, the app follows your system setting.
 - The **⋯** menu has **Export backup**, **Import backup**, **Keyboard shortcuts** and **Erase all data**.
 - Inside a tool, the breadcrumb at the top shows where you are. Click **Utilities** or press **Esc** to go back.
 
-URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`, `#/changelog`), so you can bookmark a tool directly.
+URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`, `#/changelog`, `#/tiktok`), so you can bookmark a tool directly.
 
 ---
 
@@ -369,6 +371,28 @@ Below, a combined **commits per week** chart compares all the repos.
 - **Token** (optional): add a fine-grained personal access token for 5,000 requests an hour, and for **private repos** (give it *Contents: Read-only*). It's stored only in this browser, sent only to `api.github.com`, and never included in shared links.
 - Avatars load from GitHub's image servers.
 
+### 10. TikTok viewer
+
+Build a list of TikTok videos and watch them back to back.
+
+**Adding videos:** on TikTok, use **Share → Copy link**, then paste the link into the box and press **Enter**. You can paste several at once, one per line.
+- **Accepted:** `tiktok.com/@user/video/…`, `/photo/…`, mobile `m.tiktok.com/v/….html` links, and bare video IDs.
+- **Short `vm.tiktok.com` links** can't be expanded from a web page. Open one once and copy the full address it goes to.
+- **Duplicates** are skipped.
+
+**Watching**
+- **Player:** each video plays in a phone-shaped pane using TikTok's official [embed player](https://developers.tiktok.com/doc/embed-player) (`https://www.tiktok.com/player/v1/{id}`), with TikTok's own play, volume, fullscreen and caption controls.
+- **Your controls:** previous and next, play/pause and mute, sent to the player through its documented message API.
+- **Keys:** **J** / **↓** next, **K** / **↑** previous, **Space** play/pause, **M** mute.
+- **Options:** **Autoplay**, **Play next when one ends** (moves to the next video automatically), **Loop each video**, and **Show caption & music**.
+- **Titles and authors** fill in from TikTok's public oEmbed endpoint when it's reachable. Otherwise the list shows the handle from the link.
+
+**The list:** saved in this browser and included in **Export backup**. You can reorder it, open a video on TikTok, remove videos (with Undo), copy all the links, or clear it.
+
+**Signing in:** TikTok doesn't allow signing in, liking, commenting or the For You feed inside embedded players, so this tool doesn't try. **Open TikTok to sign in** opens `tiktok.com/login` in a normal new tab. There, TikTok and your browser decide how long you stay signed in: sign out on TikTok, or use a private window, if you don't want it remembered.
+
+**If a video won't load:** it may be private or removed, or TikTok may be blocked on your network. The pane says so after a few seconds and links to the video on TikTok.
+
 ---
 
 ## Keyboard shortcuts
@@ -388,6 +412,7 @@ Below, a combined **commits per week** chart compares all the repos.
 | SQL viewer | `/` | Focus the search box |
 | SQL viewer | `J` / `K` (or `→` / `←`) | Next / previous page |
 | 3D model viewer | `R` / `W` / `A` / `G` | Reset view / cycle wireframe / auto-rotate / grid |
+| TikTok viewer | `J` / `K` (or `↓` / `↑`), `Space`, `M` | Next / previous video, play / pause, mute |
 
 Shortcuts are ignored while you're typing in a field.
 
@@ -453,7 +478,8 @@ util_app/
 │       ├── workouts.js   Workout logger (+ SVG chart)
 │       ├── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
 │       ├── stl.js        3D model viewer (STL/OBJ/3MF parsers, mesh analysis, WebGL renderer, orbit controls)
-│       └── changelog.js  Repo changelog (GitHub API client with ETag cache, timeline, changelog, stats)
+│       ├── changelog.js  Repo changelog (GitHub API client with ETag cache, timeline, changelog, stats)
+│       └── tiktok.js     TikTok viewer (link parsing, official embed player, postMessage controls, saved list)
 ├── .nojekyll
 └── README.md
 ```

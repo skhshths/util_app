@@ -711,6 +711,41 @@ button.sql-link:hover, .sql-grid tr.hit:hover .sql-link { text-decoration: under
 .cl-patch span { display: block; padding: 0 12px; white-space: pre; }
 .cl-patch .a { background: var(--add-bg); } .cl-patch .d { background: var(--del-bg); } .cl-patch .h { color: oklch(var(--al) var(--ac) 255); }
 
+/* ---------- TikTok viewer ---------- */
+.tt-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start; }
+.tt-stage { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.tt-phone { width: min(360px, 86vw); aspect-ratio: 9 / 18.5; max-height: 76vh; padding: 10px; border-radius: 44px; background: #0b0b0d;
+  box-shadow: 0 0 0 1px #2a2a30, 0 30px 60px -20px rgba(0, 0, 0, .45), inset 0 0 0 2px #1c1c21; }
+.tt-screen { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #000; }
+.tt-screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.tt-loading { position: absolute; left: 12px; right: 12px; bottom: 16px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .1); color: #e8e8ea; font-size: 12.5px; text-align: center; pointer-events: auto; backdrop-filter: blur(6px); }
+.tt-loading a { color: #fff; font-weight: 600; }
+.tt-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #b4b4bc; text-align: center; padding: 24px; font-size: 13.5px; }
+.tt-empty svg.i { width: 34px; height: 34px; color: #6c6c74; margin-bottom: 4px; }
+.tt-empty b { color: #fff; font-size: 15px; }
+.tt-controls { display: flex; align-items: center; gap: 6px; }
+.tt-toggles { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; max-width: 360px; }
+.tt-side { min-height: 300px; }
+.tt-add { display: flex; gap: 8px; align-items: flex-start; border-bottom: 1px solid var(--border); }
+.tt-add textarea { min-height: 40px; resize: vertical; }
+.tt-list { list-style: none; margin: 0; padding: 6px; max-height: 58vh; overflow: auto; counter-reset: tt; }
+.tt-item { display: flex; align-items: center; gap: 6px; border-radius: 10px; padding: 4px; transition: background-color .15s; }
+.tt-item:hover { background: var(--hover); }
+.tt-item.on { background: color-mix(in oklch, var(--accent) 12%, transparent); }
+.tt-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; padding: 2px; }
+.tt-pick img, .tt-thumb { width: 42px; height: 56px; border-radius: 7px; object-fit: cover; flex: none; background: var(--surface-2); display: grid; place-items: center; color: var(--text-3); }
+.tt-item.on .tt-thumb { color: var(--accent); }
+.tt-text { min-width: 0; display: flex; flex-direction: column; }
+.tt-text b { font-size: 13.5px; font-weight: 500; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.tt-text small { font-size: 12px; color: var(--text-3); }
+.tt-actions { display: flex; gap: 2px; opacity: .55; transition: opacity .15s; }
+.tt-item:hover .tt-actions, .tt-item:focus-within .tt-actions { opacity: 1; }
+.tt-actions a.icon-btn { color: var(--text-2); }
+.rot90 { transform: rotate(90deg); }
+.tt-hint { padding: 18px 12px; color: var(--text-2); font-size: 13.5px; text-align: center; }
+.tt-note { align-items: flex-start; line-height: 1.5; flex-wrap: nowrap; }
+.tt-note svg.i { width: 15px; height: 15px; flex: none; margin-top: 2px; }
+
 /* ---------- Modals ---------- */
 .backdrop { position: fixed; inset: 0; background: var(--backdrop); opacity: 0; pointer-events: none; transition: opacity .35s var(--ease); z-index: 40; }
 .modal-root { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; pointer-events: none; visibility: hidden; transition: visibility 0s .3s; }
@@ -776,6 +811,7 @@ button.sql-link:hover, .sql-grid tr.hit:hover .sql-link { text-decoration: under
 }
 @media (max-width: 1000px) {
   .wo-layout { grid-template-columns: 1fr; }
+  .tt-layout { grid-template-columns: 1fr; }
   .stl-layout { grid-template-columns: 1fr; }
   .sql-layout { grid-template-columns: 1fr; }
   .sql-side { position: static; max-height: 320px; }
