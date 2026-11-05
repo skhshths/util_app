@@ -13,7 +13,7 @@ A calm, minimal set of ten everyday tools in one static web app. A sleek home pa
 | 7 | **SQL viewer** | Opens SQL dumps (MySQL, MariaDB, PostgreSQL, SQLite) and SQLite database files of any size, multi-gigabyte included. Huge tables are shown a page at a time, and a full-file search finds specific rows. |
 | 8 | **3D model viewer** | Opens STL (binary or ASCII), OBJ and 3MF models in an interactive WebGL view you can rotate, pan and zoom. Shows the model's size, volume, surface area, whether it is watertight, and an estimated print weight. |
 | 9 | **Repo changelog** | Compares the commits of one or more GitHub repos side by side: a timeline with days lined up across repos, a changelog grouped by version and change type, and activity stats. Click a commit to see its files and diff. |
-| 10 | **TikTok viewer** | Saves TikTok video links and plays them back to back in a phone-sized pane using TikTok's official embed player, with keyboard controls and auto-advance. |
+| 10 | **Site emulator** | Opens any link inside phone, tablet, laptop and desktop frames. Rotate, zoom, or compare three screen sizes side by side. |
 
 The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): Inter, warm neutrals, soft cards, oklch accent colours, light and dark themes, and small spring animations.
 
@@ -33,7 +33,7 @@ The look and feel matches [skhshths/goals](https://github.com/skhshths/goals): I
   - [SQL viewer](#7-sql-viewer)
   - [3D model viewer](#8-3d-model-viewer-stl-obj-3mf)
   - [Repo changelog](#9-repo-changelog)
-  - [TikTok viewer](#10-tiktok-viewer)
+  - [Site emulator](#10-site-emulator)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Data, backups and privacy](#data-backups-and-privacy)
 - [Hosting it](#hosting-it)
@@ -78,7 +78,7 @@ Each tool has a **Sample** or **Try examples** button, so you can see it working
 - The **⋯** menu has **Export backup**, **Import backup**, **Keyboard shortcuts** and **Erase all data**.
 - Inside a tool, the breadcrumb at the top shows where you are. Click **Utilities** or press **Esc** to go back.
 
-URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`, `#/changelog`, `#/tiktok`), so you can bookmark a tool directly.
+URLs are hash-based (`#/json`, `#/regex`, `#/diff`, `#/encode`, `#/habits`, `#/workouts`, `#/sql`, `#/stl`, `#/changelog`, `#/emulator`), so you can bookmark a tool directly.
 
 ---
 
@@ -371,27 +371,39 @@ Below, a combined **commits per week** chart compares all the repos.
 - **Token** (optional): add a fine-grained personal access token for 5,000 requests an hour, and for **private repos** (give it *Contents: Read-only*). It's stored only in this browser, sent only to `api.github.com`, and never included in shared links.
 - Avatars load from GitHub's image servers.
 
-### 10. TikTok viewer
+### 10. Site emulator
 
-Build a list of TikTok videos and watch them back to back.
+See how any web page looks and works on different screens.
 
-**Adding videos:** on TikTok, use **Share → Copy link**, then paste the link into the box and press **Enter**. You can paste several at once, one per line.
-- **Accepted:** `tiktok.com/@user/video/…`, `/photo/…`, mobile `m.tiktok.com/v/….html` links, and bare video IDs.
-- **Short `vm.tiktok.com` links** can't be expanded from a web page. Open one once and copy the full address it goes to.
-- **Duplicates** are skipped.
+**Opening a page:** type or paste any link and press **Enter**. `example.com` becomes `https://example.com`, and `localhost:3000` uses `http`. Your last 8 links are kept as chips under the address bar; **×** forgets one. **↺** reloads the page.
 
-**Watching**
-- **Player:** each video plays in a phone-shaped pane using TikTok's official [embed player](https://developers.tiktok.com/doc/embed-player) (`https://www.tiktok.com/player/v1/{id}`), with TikTok's own play, volume, fullscreen and caption controls.
-- **Your controls:** previous and next, play/pause and mute, sent to the player through its documented message API.
-- **Keys:** **J** / **↓** next, **K** / **↑** previous, **Space** play/pause, **M** mute.
-- **Options:** **Autoplay**, **Play next when one ends** (moves to the next video automatically), **Loop each video**, and **Show caption & music**.
-- **Titles and authors** fill in from TikTok's public oEmbed endpoint when it's reachable. Otherwise the list shows the handle from the link.
+**Devices**
 
-**The list:** saved in this browser and included in **Export backup**. You can reorder it, open a video on TikTok, remove videos (with Undo), copy all the links, or clear it.
+| Group | Presets (CSS pixels) |
+| --- | --- |
+| Phones | iPhone 15 393×852, iPhone SE 375×667, Pixel 8 412×915, Galaxy S24 360×780 |
+| Tablets | iPad mini 744×1133, iPad 820×1180, iPad Pro 12.9" 1024×1366 |
+| Laptop and desktop | Laptop 1280×800, Desktop 1440×900, Full HD 1920×1080 |
+| Custom | Any width and height from 200 to 3840 |
 
-**Signing in:** TikTok doesn't allow signing in, liking, commenting or the For You feed inside embedded players, so this tool doesn't try. **Open TikTok to sign in** opens `tiktok.com/login` in a normal new tab. There, TikTok and your browser decide how long you stay signed in: sign out on TikTok, or use a private window, if you don't want it remembered.
+- **Rotate** (or **O**) switches to landscape.
+- **Zoom:** *Fit to screen* scales the device to the window; 50%, 75% and 100% are also available. The current scale is shown under each device.
+- **Compare devices** (or **C**) shows the page on an iPhone, an iPad and a desktop side by side.
+- **Device frame** toggles the phone and tablet bezels and the laptop and desktop window, with the address in its title bar.
+- **Share** copies a link such as `…/#/emulator?u=https%3A%2F%2Fexample.com&d=ipad` that opens the same view. **Open in new tab** opens the page normally.
 
-**If a video won't load:** it may be private or removed, or TikTok may be blocked on your network. The pane says so after a few seconds and links to the video on TikTok.
+**How it works**
+- **The page really gets the device's screen size.** Each page runs in a frame exactly that size, so the page's `innerWidth`, media queries, mobile menus and scripts behave as they would on that screen. The device is then scaled to fit your window.
+- **Your browser stays your browser.** The page sees your browser (its user agent, fonts and touch support), not the device's. Use your browser's built-in device mode for that.
+- **Sandboxing:** the frame can run scripts, forms, pop-ups and video, but it can't navigate or take over this tab.
+
+**Sites that can't be shown:** some sites tell browsers not to display them inside other pages, using `X-Frame-Options` or `frame-ancestors`. That includes most big apps and anything with a login: Google, YouTube, TikTok, Instagram, GitHub, banks and so on.
+- **Well-known ones** get a message straight away, with **Open in new tab**.
+- **Others** show the browser's own "refused to connect" page or a blank frame. A hint appears if loading takes more than 8 seconds.
+- **No proxy:** the emulator does not relay pages through a server to get around this, so it never sees your logins or cookies.
+- **Plain `http://` links** can't load inside an `https://` page (browsers block mixed content). The emulator offers the `https://` version.
+
+**Tested with** `example.com` and `oliverbar.net`, which redirects to `www.oliverbar.net`. Both load live, and inside the iPhone 15 frame the page reports a 393×852 window.
 
 ---
 
@@ -412,7 +424,7 @@ Build a list of TikTok videos and watch them back to back.
 | SQL viewer | `/` | Focus the search box |
 | SQL viewer | `J` / `K` (or `→` / `←`) | Next / previous page |
 | 3D model viewer | `R` / `W` / `A` / `G` | Reset view / cycle wireframe / auto-rotate / grid |
-| TikTok viewer | `J` / `K` (or `↓` / `↑`), `Space`, `M` | Next / previous video, play / pause, mute |
+| Site emulator | `/`, `O`, `C` | Focus the address bar, rotate, compare devices |
 
 Shortcuts are ignored while you're typing in a field.
 
@@ -479,7 +491,7 @@ util_app/
 │       ├── sql.js        SQL viewer (streaming dump indexer, SQLite page reader, search worker)
 │       ├── stl.js        3D model viewer (STL/OBJ/3MF parsers, mesh analysis, WebGL renderer, orbit controls)
 │       ├── changelog.js  Repo changelog (GitHub API client with ETag cache, timeline, changelog, stats)
-│       └── tiktok.js     TikTok viewer (link parsing, official embed player, postMessage controls, saved list)
+│       └── emulator.js   Site emulator (device presets, sandboxed frames, fit-to-screen scaling, compare view)
 ├── .nojekyll
 └── README.md
 ```
